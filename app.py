@@ -148,7 +148,7 @@ if manager.current_project is None:
 # 侧边栏
 # ================================================================
 with st.sidebar:
-    st.markdown("## ⚡ AI Cluster")
+    st.markdown("# AI Cluster")
     st.divider()
 
     new_mode = st.radio(

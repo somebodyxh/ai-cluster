@@ -136,15 +136,15 @@ class ModelConfigUpdater:
 
     def _mock_search_results(self) -> str:
         return """
-LMArena 2026年2月榜单：
-综合能力前十：1. claude-opus-4-6, 2. gemini-3.1-pro, 3. gpt-5.4, 5. deepseek-v3.2-Speciale,
+LMArena 2026年2月榜单
+综合能力前十 1. claude-opus-4-6, 2. gemini-3.1-pro, 3. gpt-5.4, 5. deepseek-v3.2-Speciale,
 6. qwen2.5-72b, 7. minimax-m2.1, 8. glm-5, 9. kimi-k2.5, 10. llama-4-70b
 
-代码能力特别突出：GLM-5（全球第8）、MiniMax-M2.1
-数学推理：Kimi K2.5-thinking（全球第8）、deepseek-r1-0528
-多模态视觉：Seed 2.0（全球第4）、qwen2.5-vl-72b
+代码能力特别突出GLM-5（全球第8、MiniMax-M2.1
+数学推理：Kimi K2.5-thinking全球第8、
+多模态视觉：Seed 2.0全球第4、qwen2.5-vl-72b
 
-天罡评测 2026年1月：
+天罡评测 2026年1月
 任务分解：deepseek-v3.2-Speciale 93.5分
 信息抽取：deepseek-v3.2-Speciale 93.49分
 中文能力：qwen2.5-72b 94.2分
@@ -156,9 +156,6 @@ LMArena 2026年2月榜单：
         """
         让主 LLM 分析评测数据，生成 model_config.json 的内容。
 
-        【Bug 修复】原版提示词硬编码了 "coder/reasoner 用硅基，writer/aggregator 用 OpenRouter"，
-        与 MIXED_ROUTING 的实际配置不同步，导致 LLM 选错模型 ID。
-        现在动态读取 MIXED_ROUTING，提示词和配置完全一致。
         """
         mode = get_platform_mode()
 
@@ -217,10 +214,10 @@ LMArena 2026年2月榜单：
 
 要求：
 1. 提取评测中提到的模型，整理成列表，每个模型包含：
-   id、name、capabilities（各能力评分0-1）、best_for（列表）、source（来源）、ranking（排名）。
+   id、name、capabilities各能力评分0-1、best_for、source、ranking
 2. 为以下任务类型推荐最佳模型：coder、reasoner、writer、vision、aggregator，写入 default_mapping 字段。
 3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本。
-4. 输出 JSON 格式，包含字段：last_update（当前日期）、models（列表）、default_mapping（字典）。
+4. 输出 JSON 格式，包含字段：last_update 、models  default_mapping
 5. 优先选择最新版本，避免已被替代的旧型号。
 6. 暂不使用 Qwen 类型的模型。
 7. aggregator 尽量使用 deepseek 系列。
@@ -255,7 +252,7 @@ LMArena 2026年2月榜单：
             system_prompt=system_prompt,
             temperature=0.1,
             max_tokens=3000,
-            role="reasoner"   # 走硅基，省 OpenRouter 费用
+            role="reasoner"  
         )
 
         print("\n" + "=" * 50)
