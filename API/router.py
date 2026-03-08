@@ -52,9 +52,15 @@ def call_model_stream(model: str, prompt: str, system_prompt: str = "",
 
 def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                                system_prompt: str = "", temperature: float = 0.7,
-                               max_tokens: int = 2000, role: str = "writer"):
+                               max_tokens: int = 2000, role: str = "writer",
+                               cancel_event=None):
+    """
+    cancel_event : stream_utils.register_cancel() 返回的 threading.Event，
+                   透传给底层 API 模块，实现真正的线程取消。
+    """
     _pick(role).call_model_stream_to_file(
-        model, file_path, prompt, system_prompt, temperature, max_tokens
+        model, file_path, prompt, system_prompt, temperature, max_tokens,
+        cancel_event=cancel_event
     )
 
 

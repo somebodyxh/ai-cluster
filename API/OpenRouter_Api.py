@@ -22,6 +22,7 @@ OpenRouter 是一个 API 聚合平台，用同一个接口访问：
 现在在 get_client() 里加入检查，KEY 为空时立即给出清晰提示。
 """
 
+import os
 import threading
 import time
 from openai import OpenAI
@@ -65,31 +66,24 @@ def get_client() -> OpenAI:
 
 def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                                system_prompt: str = "", temperature: float = 0.7,
-                               max_tokens: int = 2000, **kwargs) -> None:
+                               max_tokens: int = 2000,
+                               cancel_event: threading.Event = None,
+                               **kwargs) -> None:
     """
     后台线程流式调用，将 chunk 实时写入文件。
-
-    工作原理：
-        1. 启动守护线程（daemon=True，主进程退出时自动结束）
-        2. 线程内建立 SSE 流式连接
-        3. 每收到一个 chunk 立即 f.write() + f.flush() 写入磁盘
-        4. 写完后创建 .done 标记文件
-        5. 前端（app.py）轮询文件内容和 .done 是否存在来显示进度
-
-    **kwargs：接收 router.py 传来的多余参数（如 role），统一用 **kwargs 吸收，
-    避免因参数不匹配报 TypeError。
+    cancel_event : 由 stream_utils.register_cancel() 创建并传入，收到信号后停止写入并清理临时文件。
     """
     log_api_call(model, prompt, stream=True, max_tokens=max_tokens)
     log("STREAM", f"后台线程启动 [OpenRouter] → {file_path}")
 
     def _run():
-        client  = get_client()
-        t_start = time.time()
-        total   = 0
+        from utils.stream_utils import clear_cancel
+        client    = get_client()
+        t_start   = time.time()
+        total     = 0
+        cancelled = False
         try:
-            # 清空或创建文件（防止上次内容残留）
             open(file_path, 'w', encoding='utf-8').close()
-
             response = client.chat.completions.create(
                 model=model,
                 messages=[
@@ -101,30 +95,46 @@ def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                 stream=True,
                 timeout=360,
             )
-
             with open(file_path, 'a', encoding='utf-8') as f:
                 for chunk in response:
+                    if cancel_event and cancel_event.is_set():
+                        cancelled = True
+                        log("STREAM", f"收到取消信号，停止写入 [OpenRouter] → {file_path}")
+                        break
                     if not chunk.choices:
                         continue
                     content = chunk.choices[0].delta.content
                     if content:
                         f.write(content)
-                        f.flush()          # 立即写到磁盘，让前端读到最新内容
+                        f.flush()
                         total += len(content)
                         if total % 200 < len(content):
                             log_stream(file_path.split('/')[-1], len(content), total, done=False)
 
-            log_api_done(model, total, time.time() - t_start)
-            log_stream(file_path.split('/')[-1], 0, total, done=True)
+            if not cancelled:
+                log_api_done(model, total, time.time() - t_start)
+                log_stream(file_path.split('/')[-1], 0, total, done=True)
 
         except Exception as e:
             log_api_error(model, str(e))
-            with open(file_path, 'a', encoding='utf-8') as f:
-                f.write(f"\n[错误] {e}")
+            if not cancelled:
+                try:
+                    with open(file_path, 'a', encoding='utf-8') as f:
+                        f.write(f"\n[错误] {e}")
+                except Exception:
+                    pass
         finally:
-            # 无论成功还是失败，都创建 .done 标记，让前端不会永远等待
-            open(file_path + '.done', 'w').close()
-            log("STREAM", "写入 .done 标记 [OpenRouter]")
+            clear_cancel(file_path)
+            if cancelled:
+                for p in [file_path, file_path + '.done']:
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
+                log("STREAM", "已取消，临时文件已清理 [OpenRouter]")
+            else:
+                open(file_path + '.done', 'w').close()
+                log("STREAM", "写入 .done 标记 [OpenRouter]")
 
     threading.Thread(
         target=_run, daemon=True,

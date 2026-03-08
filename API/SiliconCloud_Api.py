@@ -1,6 +1,7 @@
 """
 硅基流动API封装模块
 """
+import os
 import threading
 import time
 from openai import OpenAI
@@ -22,15 +23,24 @@ def get_client():
 
 def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                                system_prompt: str = "", temperature: float = 0.7,
-                               max_tokens: int = 2000):
-    """后台线程流式调用，将 chunk 实时写入文件"""
+                               max_tokens: int = 2000,
+                               cancel_event: threading.Event = None):
+    """
+    后台线程流式调用，将 chunk 实时写入文件。
+
+    cancel_event : 由 stream_utils.register_cancel() 创建并传入。
+                   线程在每个 chunk 边界检查它，收到信号后立即停止写入，
+                   清理临时文件（不写 .done），让前端停止轮询。
+    """
     log_api_call(model, prompt, stream=True, max_tokens=max_tokens)
     log("STREAM", f"后台线程启动 → {file_path}")
 
     def _run():
-        client  = get_client()
-        t_start = time.time()
-        total   = 0
+        from utils.stream_utils import clear_cancel   # 避免循环 import，局部导入
+        client    = get_client()
+        t_start   = time.time()
+        total     = 0
+        cancelled = False
         try:
             open(file_path, 'w', encoding='utf-8').close()
             response = client.chat.completions.create(
@@ -46,6 +56,11 @@ def call_model_stream_to_file(model: str, file_path: str, prompt: str,
             )
             with open(file_path, 'a', encoding='utf-8') as f:
                 for chunk in response:
+                    # ── 取消检测：每个 chunk 前先检查信号 ──
+                    if cancel_event and cancel_event.is_set():
+                        cancelled = True
+                        log("STREAM", f"收到取消信号，停止写入 → {file_path}")
+                        break
                     if not chunk.choices:
                         continue
                     content = chunk.choices[0].delta.content
@@ -56,16 +71,31 @@ def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                         if total % 200 < len(content):
                             log_stream(file_path.split('/')[-1], len(content), total, done=False)
 
-            log_api_done(model, total, time.time() - t_start)
-            log_stream(file_path.split('/')[-1], 0, total, done=True)
+            if not cancelled:
+                log_api_done(model, total, time.time() - t_start)
+                log_stream(file_path.split('/')[-1], 0, total, done=True)
 
         except Exception as e:
             log_api_error(model, str(e))
-            with open(file_path, 'a', encoding='utf-8') as f:
-                f.write(f"\n[错误] {e}")
+            if not cancelled:
+                try:
+                    with open(file_path, 'a', encoding='utf-8') as f:
+                        f.write(f"\n[错误] {e}")
+                except Exception:
+                    pass
         finally:
-            open(file_path + '.done', 'w').close()
-            log("STREAM", f"写入 .done 标记")
+            clear_cancel(file_path)
+            if cancelled:
+                # 取消时清理孤儿文件，不创建 .done，前端靠 agent_state=None 停止轮询
+                for p in [file_path, file_path + '.done']:
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
+                log("STREAM", "已取消，临时文件已清理")
+            else:
+                open(file_path + '.done', 'w').close()
+                log("STREAM", "写入 .done 标记")
 
     threading.Thread(target=_run, daemon=True,
                      name=f"stream-{model.split('/')[-1][:20]}").start()

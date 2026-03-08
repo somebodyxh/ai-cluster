@@ -19,10 +19,56 @@ utils/stream_utils.py - 流文件操作通用库
 
 import os
 import re
+import threading
 
 
 # ── 流文件存放目录（与 app.py 保持一致）─────────────────────────────
 PROJECTS_DIR = "projects"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 取消注册表
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 用文件路径作 key，存每个流对应的 threading.Event。
+# 启动线程前 register_cancel() 创建 Event，停止时 cancel_stream() set() 它。
+# API 层在 chunk 循环里检查 Event，收到信号立即退出并清理临时文件。
+_cancel_events: dict = {}
+_events_lock = threading.Lock()
+
+
+def register_cancel(file_path: str) -> threading.Event:
+    """
+    在启动后台线程前调用，为该流注册一个取消事件并返回它。
+    返回的 Event 需要传给 call_model_stream_to_file()。
+
+    示例：
+        evt   = register_cancel(fpath)
+        call_model_stream_to_file(model, fpath, prompt, cancel_event=evt)
+    """
+    evt = threading.Event()
+    with _events_lock:
+        _cancel_events[file_path] = evt
+    return evt
+
+
+def cancel_stream(file_path: str) -> bool:
+    """
+    通知后台线程停止。线程在下一个 chunk 边界检测到信号后退出，
+    并自行清理 .txt 和 .done，不留孤儿文件。
+
+    返回 True 表示找到了对应的 Event 并已 set()；False 表示线程可能已结束。
+    """
+    with _events_lock:
+        evt = _cancel_events.get(file_path)
+    if evt:
+        evt.set()
+        return True
+    return False
+
+
+def clear_cancel(file_path: str):
+    """线程正常结束后，从注册表中移除 Event，防止内存无限增长。"""
+    with _events_lock:
+        _cancel_events.pop(file_path, None)
 
 
 def safe_name(name: str) -> str:
