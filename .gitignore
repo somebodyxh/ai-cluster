@@ -1,0 +1,55 @@
+# 密钥文件
+secrets.json
+
+# 配置文件（如果不想公开默认配置，可以取消注释下一行）
+# config/model_config.json
+# config/platform_mode.json
+
+# 对话历史数据
+projects/
+!projects/.gitkeep   
+
+# 流临时文件
+projects/.stream_*
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.egg-info/
+dist/
+build/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+
+# 环境变量文件
+.env
+
+# 操作系统生成文件
+.DS_Store
+Thumbs.db
+
+# 备份文件（如 auto_updater 生成的备份）
+config/*.bak
+
+# 如果你有本地测试脚本，可以忽略
+test_*.py

@@ -1,0 +1,149 @@
+{
+  "last_update": "2026-03-08",
+  "models": [
+    {
+      "id": "Pro/deepseek-ai/DeepSeek-V3.2",
+      "name": "DeepSeek V3.2",
+      "capabilities": {
+        "reasoning": 0.96,
+        "coding": 0.88,
+        "writing": 0.82,
+        "chinese": 0.92,
+        "vision": 0.65
+      },
+      "best_for": [
+        "reasoning",
+        "mathematics"
+      ],
+      "source": "xbench 2026-02, 开源榜单",
+      "ranking": 4
+    },
+    {
+      "id": "Pro/zai-org/GLM-5",
+      "name": "GLM-5",
+      "capabilities": {
+        "reasoning": 0.93,
+        "coding": 0.97,
+        "writing": 0.88,
+        "chinese": 0.96,
+        "vision": 0.75
+      },
+      "best_for": [
+        "coding",
+        "agent"
+      ],
+      "source": "开源榜单 2026-02",
+      "ranking": 2
+    },
+    {
+      "id": "Pro/moonshotai/Kimi-K2.5",
+      "name": "Kimi K2.5",
+      "capabilities": {
+        "reasoning": 0.87,
+        "coding": 0.78,
+        "writing": 0.98,
+        "chinese": 0.99,
+        "vision": 0.8
+      },
+      "best_for": [
+        "writing",
+        "long-context"
+      ],
+      "source": "xbench 2026-01, 开源榜单",
+      "ranking": 5
+    },
+    {
+      "id": "zai-org/GLM-4.6V",
+      "name": "GLM-4.6V",
+      "capabilities": {
+        "reasoning": 0.8,
+        "coding": 0.7,
+        "writing": 0.75,
+        "chinese": 0.9,
+        "vision": 0.95
+      },
+      "best_for": [
+        "vision",
+        "multimodal"
+      ],
+      "source": "xbench 2026-01",
+      "ranking": 8
+    },
+    {
+      "id": "Pro/MiniMaxAI/MiniMax-M2.5",
+      "name": "MiniMax M2.5",
+      "capabilities": {
+        "reasoning": 0.89,
+        "coding": 0.85,
+        "writing": 0.87,
+        "chinese": 0.94,
+        "vision": 0.7
+      },
+      "best_for": [
+        "speed",
+        "cost-efficiency"
+      ],
+      "source": "开源榜单 2026-02",
+      "ranking": 3
+    },
+    {
+      "id": "openai/gpt-5.4-pro",
+      "name": "GPT-5.4 Pro",
+      "capabilities": {
+        "reasoning": 0.99,
+        "coding": 0.96,
+        "writing": 0.98,
+        "chinese": 0.88,
+        "vision": 0.85
+      },
+      "best_for": [
+        "general",
+        "reasoning",
+        "writing"
+      ],
+      "source": "LMArena 2026-01",
+      "ranking": 1
+    },
+    {
+      "id": "z-ai/glm-5",
+      "name": "GLM-5",
+      "capabilities": {
+        "reasoning": 0.93,
+        "coding": 0.97,
+        "writing": 0.88,
+        "chinese": 0.96,
+        "vision": 0.75
+      },
+      "best_for": [
+        "coding",
+        "agent"
+      ],
+      "source": "开源榜单 2026-02",
+      "ranking": 2
+    },
+    {
+      "id": "nex-agi/deepseek-v3.1-nex-n1",
+      "name": "DeepSeek V3.1 Nex N1",
+      "capabilities": {
+        "reasoning": 0.94,
+        "coding": 0.86,
+        "writing": 0.83,
+        "chinese": 0.91,
+        "vision": 0.7
+      },
+      "best_for": [
+        "reasoning",
+        "aggregation"
+      ],
+      "source": "OpenRouter 列表",
+      "ranking": 10
+    }
+  ],
+  "default_mapping": {
+    "coder": "z-ai/glm-5",
+    "reasoner": "Pro/deepseek-ai/DeepSeek-V3.2",
+    "writer": "Pro/moonshotai/Kimi-K2.5",
+    "vision": "zai-org/GLM-4.6V",
+    "aggregator": "nex-agi/deepseek-v3.1-nex-n1"
+  }
+}
