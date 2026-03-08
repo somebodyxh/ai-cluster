@@ -91,10 +91,10 @@ pip install streamlit openai tavily-python
 ### 3. 启动
 
 ```bash
-streamlit run "front end/app.py"
+streamlit run "app.py"
 ```
 
-### 4. 强制更新模型配置
+### 4. 强制更新模型配置（适用于main.py启动）
 
 ```bash
 python config/auto_updater.py --force
