@@ -215,12 +215,11 @@ LMArena 2026年2月榜单
 要求：
 1. 提取评测中提到的模型，整理成列表，每个模型包含：
    id、name、capabilities各能力评分0-1、best_for、source、ranking
-2. 为以下任务类型推荐最佳模型：coder、reasoner、writer、vision、aggregator，写入 default_mapping 字段。
-3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本。
+2. 为以下任务类型推荐最佳模型：coder、reasoner、writer、vision、aggregator，写入 default_mapping 字段
+3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本
 4. 输出 JSON 格式，包含字段：last_update 、models  default_mapping
-5. 优先选择最新版本，避免已被替代的旧型号。
-6. 暂不使用 Qwen 类型的模型。
-7. aggregator 尽量使用 deepseek 系列。
+5. 优先选择最新版本
+6.不要使用deepseekR1和deepseeekv3
 
 {available_section}
 

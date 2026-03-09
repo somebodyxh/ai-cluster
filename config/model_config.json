@@ -1,98 +1,93 @@
 {
-  "last_update": "2026-03-08",
+  "last_update": "2026-03-09",
   "models": [
     {
-      "id": "Pro/deepseek-ai/DeepSeek-V3.2",
-      "name": "DeepSeek-V3.2",
+      "id": "Pro/moonshotai/Kimi-K2.5",
+      "name": "Kimi K2.5",
       "capabilities": {
-        "reasoning": 0.95,
-        "coding": 0.85,
-        "writing": 0.8,
-        "vision": 0.0,
-        "chinese": 0.9
+        "reasoning": 0.8,
+        "coding": 0.6,
+        "writing": 0.9,
+        "vision": 0.85
       },
       "best_for": [
-        "reasoning",
-        "mathematics"
+        "writing",
+        "vision"
       ],
-      "source": "开源大模型榜单 2026-02",
-      "ranking": 1
+      "source": "xbench 2026-01, LMArena",
+      "ranking": 5
     },
     {
       "id": "Pro/zai-org/GLM-5",
       "name": "GLM-5",
       "capabilities": {
         "reasoning": 0.85,
-        "coding": 0.95,
-        "writing": 0.8,
-        "vision": 0.0,
-        "chinese": 0.9
+        "coding": 0.9,
+        "writing": 0.7,
+        "vision": 0.6
       },
       "best_for": [
         "coding",
-        "agent_tasks"
+        "reasoning"
       ],
-      "source": "开源大模型榜单 2026-02",
+      "source": "xbench 2026-02, 开源TOP10",
       "ranking": 2
     },
     {
-      "id": "Pro/moonshotai/Kimi-K2.5",
-      "name": "Kimi-K2.5",
+      "id": "Pro/MiniMaxAI/MiniMax-M2.5",
+      "name": "MiniMax M2.5",
       "capabilities": {
         "reasoning": 0.8,
-        "coding": 0.75,
-        "writing": 0.9,
-        "vision": 0.85,
-        "chinese": 0.95
-      },
-      "best_for": [
-        "writing",
-        "long_text",
-        "multimodal"
-      ],
-      "source": "xbench月报 2026-02",
-      "ranking": 1
-    },
-    {
-      "id": "Pro/MiniMaxAI/MiniMax-M2.5",
-      "name": "MiniMax-M2.5",
-      "capabilities": {
-        "reasoning": 0.75,
         "coding": 0.8,
-        "writing": 0.75,
-        "vision": 0.0,
-        "chinese": 0.85
+        "writing": 0.6,
+        "vision": 0.5
       },
       "best_for": [
-        "cost_effective",
-        "fast_inference"
+        "reasoning",
+        "coding"
       ],
-      "source": "开源大模型榜单 2026-02",
+      "source": "开源TOP10 2026",
       "ranking": 3
     },
     {
-      "id": "Pro/deepseek-ai/DeepSeek-R1",
-      "name": "DeepSeek-R1",
+      "id": "Qwen/Qwen3.5-397B-A17B",
+      "name": "Qwen 3.5",
       "capabilities": {
         "reasoning": 0.9,
-        "coding": 0.8,
-        "writing": 0.85,
-        "vision": 0.0,
-        "chinese": 0.95
+        "coding": 0.85,
+        "writing": 0.95,
+        "vision": 0.9
       },
       "best_for": [
-        "aggregation",
-        "long_text"
+        "writing",
+        "vision",
+        "reasoning"
       ],
-      "source": "开源大模型榜单 2026-02",
-      "ranking": 5
+      "source": "Hugging Face 2026-02, xbench",
+      "ranking": 1
+    },
+    {
+      "id": "Pro/deepseek-ai/DeepSeek-R1",
+      "name": "DeepSeek-V4 (R1)",
+      "capabilities": {
+        "reasoning": 0.95,
+        "coding": 0.9,
+        "writing": 0.7,
+        "vision": 0.5
+      },
+      "best_for": [
+        "reasoning",
+        "coding"
+      ],
+      "source": "开源TOP10 2026",
+      "ranking": 4
     }
   ],
   "default_mapping": {
     "coder": "Pro/zai-org/GLM-5",
-    "reasoner": "Pro/deepseek-ai/DeepSeek-V3.2",
-    "writer": "Pro/moonshotai/Kimi-K2.5",
+    "reasoner": "Pro/deepseek-ai/DeepSeek-R1",
+    "writer": "Qwen/Qwen3.5-397B-A17B",
     "vision": "Pro/moonshotai/Kimi-K2.5",
-    "aggregator": "Pro/deepseek-ai/DeepSeek-V3.2"
+    "aggregator": "Qwen/Qwen3.5-397B-A17B"
   }
 }

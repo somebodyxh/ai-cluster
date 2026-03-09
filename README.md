@@ -3,7 +3,7 @@
 > 一个基于 Streamlit 的多 Agent 协作框架，支持国内（硅基流动）/ 国外（OpenRouter）双平台混合路由，自动更新模型配置，流式输出实时显示。
 
 ---
-
+![alt text](1773020553109.png)
 ## 目录
 
 1. [项目结构](#项目结构)
@@ -27,7 +27,7 @@ AI集群/
 ├── main.py                        # 命令行入口（可选）
 ├── platform_config.py             # ★ 平台路由总配置（domestic/foreign/mixed）
 ├── debug.py                       # ★ 全局调试日志模块
-│
+├── app.py                         #主入口
 ├── main/
 │   └── Json.py                    # secrets.json 读取，导出 API Keys
 │
@@ -52,8 +52,8 @@ AI集群/
 │   ├── stream_utils.py            # 流文件操作：路径计算、读写、完成检测
 │   └── text_utils.py              # 文本处理：filter_json、parse_tasks
 │
-├── front end/
-│   └── app.py                     # ★ Streamlit 前端主文件
+│
+│                      
 │
 ├── projects/                      # 运行时生成：对话持久化 JSON + 流临时文件
 │   ├── 对话名称.json

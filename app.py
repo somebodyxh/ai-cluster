@@ -314,13 +314,18 @@ for msg in proj.history:
 # ================================================================
 
 def show_live(label: str, content: str, done: bool):
-    """渲染实时输出块，完成后可折叠"""
-    cursor = "" if done else "<span class='cursor'></span>"
+    """渲染实时输出块，完成后用 markdown 正常渲染"""
     with st.expander(label, expanded=not done):
-        st.markdown(
-            f"<div class='live-box'>{content}{cursor}</div>",
-            unsafe_allow_html=True
-        )
+        if done:
+            # 完成后交给 Streamlit markdown 渲染，代码块/表格等正常显示
+            st.markdown(content)
+        else:
+            # 流进行中：纯文本 + 光标动画
+            cursor = "<span class='cursor'></span>"
+            st.markdown(
+                f"<div class='live-box'>{content}{cursor}</div>",
+                unsafe_allow_html=True
+            )
 
 
 is_streaming_now = False   # 当前是否正在轮询，用于控制 chat_input 显示
