@@ -76,18 +76,23 @@ code {
     font-size: 0.83em !important; color: #e5c07b !important;
 }
 pre {
-    margin: 16px 0 !important;        /* 增加上下间距 */
-    clear: both;                      /* 清除浮动 */
-    overflow-x: auto;                  /* 横向滚动 */
+    margin: 16px 0 !important;
+    clear: both;
+    overflow-x: auto;
     border-radius: 8px !important;
     background: #1a1a1a !important;
     border: 1px solid #333 !important;
     padding: 14px !important;
 }
 pre code {
-    background: #1a1a1a !important; color: #abb2bf !important;
-    border-radius: 8px !important; padding: 14px !important;
-    border: 1px solid #333 !important; display: block;
+    /* pre 已经处理了边框和内边距，code 只负责字体和颜色 */
+    background: transparent !important;
+    color: #abb2bf !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    display: block;
 }
 .live-box {
     margin-bottom: 20px !important;    /* 增加底部间距 */

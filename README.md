@@ -59,7 +59,7 @@ AI集群/
 │   ├── 对话名称.json
 │   └── .stream_xxx_yyy.txt        # 临时流文件（完成后删除）
 │
-└── secrets.json                   # 本地密钥文件（不提交到 git！）
+└── secrets.json                   # 本地密钥文件
 ```
 
 ---
@@ -74,7 +74,7 @@ pip install streamlit openai tavily-python
 
 ### 2. 配置密钥
 
-首次运行时程序会提示输入，自动生成 `secrets.json`：
+首次运行时程序会提示输入（请在cmd或终端内输入），自动生成 `secrets.json`：
 
 ```json
 {
