@@ -402,39 +402,46 @@ elif proj.agent_state:
                 time.sleep(0.3)
                 st.rerun()
 
-    elif state.get("current_stream"):
-        # 通用子任务流轮询（只在 phase=="tasks" 期间会走到这里）
-        cs        = state["current_stream"]
-        file_path = cs["file"]
-        content   = read_stream(file_path)
-        done      = is_done(file_path)
-        icon      = ROLE_ICON.get(cs["role"], "⚙️")
-        short     = cs["model"].split("/")[-1]
+    elif state.get("active_streams"):
+        # 并行子任务轮询：同时显示所有正在运行的流，收集完成的
+        still_running = []
+        any_just_done = False
 
-        with st.chat_message("assistant"):
-            label = f"✓ {cs['task_id']} 完成 · {short}" if done \
-                    else f"{icon} {cs['task_id']} · {cs['role']} · {short} ⟳"
-            show_live(label, content, done)
+        for cs in state["active_streams"]:
+            file_path = cs["file"]
+            content   = read_stream(file_path)
+            done      = is_done(file_path)
+            icon      = ROLE_ICON.get(cs["role"], "⚙️")
+            short     = cs["model"].split("/")[-1]
 
-        if done:
-            cleanup(file_path)
-            state.setdefault("completed_display", []).append({
-                "task_id":     cs["task_id"],
-                "model_short": short,
-                "content":     content
-            })
-            state["results"][cs["task_id"]] = content
-            state["all_output"].append(content)
-            state["current_stream"] = None
-            manager._save_project(proj)
-            st.rerun()
-        else:
+            with st.chat_message("assistant"):
+                label = f"✓ {cs['task_id']} 完成 · {short}" if done \
+                        else f"{icon} {cs['task_id']} · {cs['role']} · {short} ⟳"
+                show_live(label, content, done)
+
+            if done:
+                cleanup(file_path)
+                state.setdefault("completed_display", []).append({
+                    "task_id":     cs["task_id"],
+                    "model_short": short,
+                    "content":     content
+                })
+                state["results"][cs["task_id"]] = content
+                any_just_done = True
+            else:
+                still_running.append(cs)
+
+        state["active_streams"] = still_running
+        manager._save_project(proj)
+
+        if still_running:
             is_streaming_now = True
             time.sleep(0.3)
             st.rerun()
-
+        elif any_just_done:
+            st.rerun()
     elif state.get("phase") == "tasks":
-        # 没有当前流 → 找下一个可执行任务
+        # 没有当前流 → 找所有可执行任务并并行启动
         tasks   = state["tasks"]
         results = state["results"]
         pending = [t for t in tasks if t["task_id"] not in results]
@@ -448,22 +455,24 @@ elif proj.agent_state:
                     unsafe_allow_html=True
                 )
             else:
-                task    = executable[0]
-                task_id = task["task_id"]
-                role    = task["role"]
-                model   = updater.get_best_model(role)
-                prompt  = task["prompt"]
-                for dep in task.get("depends_on", []):
-                    prompt = prompt.replace(f"{{{{{dep}}}}}", results.get(dep, ""))
+                # 并行启动所有当前可执行任务
+                for task in executable:
+                    task_id = task["task_id"]
+                    role    = task["role"]
+                    model   = updater.get_best_model(role)
+                    prompt  = task["prompt"]
+                    for dep in task.get("depends_on", []):
+                        prompt = prompt.replace(f"{{{{{dep}}}}}", results.get(dep, ""))
 
-                fpath = stream_file(proj.name, task_id)
-                cancel_evt = register_cancel(fpath)
-                call_model_stream_to_file(model, fpath, prompt, role=role,
-                                         cancel_event=cancel_evt)
-                state["current_stream"] = {
-                    "task_id": task_id, "role": role,
-                    "model": model, "file": fpath
-                }
+                    fpath = stream_file(proj.name, task_id)
+                    cancel_evt = register_cancel(fpath)
+                    call_model_stream_to_file(model, fpath, prompt, role=role,
+                                             cancel_event=cancel_evt)
+                    state["active_streams"].append({
+                        "task_id": task_id, "role": role,
+                        "model": model, "file": fpath
+                    })
+
                 manager._save_project(proj)
                 is_streaming_now = True
                 time.sleep(0.2)
@@ -472,16 +481,22 @@ elif proj.agent_state:
             state["phase"] = "summary"
             manager._save_project(proj)
             st.rerun()
-
     elif state.get("phase") == "summary":
-        # 启动总结（current_stream 此时一定为 None）
+        # 启动总结（active_streams 此时一定为空）
+        # 按原始任务顺序重建 all_output，保证总结连贯
+        results    = state["results"]
+        all_output = [
+            results[t["task_id"]]
+            for t in state["tasks"]
+            if t["task_id"] in results
+        ]
         summary_model  = updater.get_best_model("aggregator")
         user_input     = state.get("user_input", "")
         summary_prompt = (
             f"用户原始问题：{user_input}\n\n"
             + "\n\n".join(
                 f"子任务{i+1}结果：\n{r}"
-                for i, r in enumerate(state.get("all_output", []))
+                for i, r in enumerate(all_output)
             )
             + "\n\n请整合所有子任务结果，给出简洁连贯的最终答案。不要重复子任务细节。"
         )
@@ -500,7 +515,6 @@ elif proj.agent_state:
         st.rerun()
 
 
-
 # ================================================================
 # 输入区（流式进行中时禁用）
 # ================================================================
@@ -517,16 +531,21 @@ if is_streaming_now:
                 proj.chat_stream = None
 
             if proj.agent_state:
+                # 取消所有并行子任务流
+                for cs in proj.agent_state.get("active_streams", []):
+                    cancel_stream(cs["file"])
+                    cleanup(cs["file"])
+                # 取消 summary 流（如果有）
                 cs = proj.agent_state.get("current_stream")
                 if cs:
                     cancel_stream(cs["file"])
                     cleanup(cs["file"])
 
-                #把已完成的子任务内容存入历史，停止后用户仍能看到
+                # 已完成的子任务存入历史，停止后用户仍能看到
                 completed = proj.agent_state.get("completed_display", [])
                 if completed:
-                    user_q   = proj.agent_state.get("user_input", "（Agent任务）")
-                    partial  = "\n\n".join(
+                    user_q  = proj.agent_state.get("user_input", "（Agent任务）")
+                    partial = "\n\n".join(
                         f"**{r['task_id']}**（{r['model_short']}）：\n{r['content']}"
                         for r in completed
                     )
@@ -631,9 +650,9 @@ else:
                 proj.agent_state = {
                     "tasks":             tasks,
                     "results":           {},
-                    "all_output":        [],
                     "completed_display": [],
-                    "current_stream":    None,
+                    "active_streams":    [],   # 并行：同时追踪多个流
+                    "current_stream":    None, # 仅 summary_streaming 阶段使用
                     "phase":             "tasks",
                     "user_input":        user_input
                 }

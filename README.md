@@ -1,6 +1,6 @@
 # ⚡ AI Cluster — 多智能体 LLM 框架
 
-> 一个基于 Streamlit 的多 Agent 协作框架，支持国内（硅基流动）/ 国外（OpenRouter）双平台混合路由，自动更新模型配置，流式输出实时显示。
+> 一个基于 Streamlit 的多 Agent 协作框架，支持国内（硅基流动）/ 国外（OpenRouter）双平台混合路由，自动更新模型配置，流式输出实时显示，Agent 子任务并行执行。
 
 ---
 ![alt text](1773020553109.png)
@@ -24,10 +24,10 @@
 
 ```
 AI集群/
-├── main.py                        # 命令行入口（可选）
+├── app.py                         # ★ Streamlit 前端主入口
 ├── platform_config.py             # ★ 平台路由总配置（domestic/foreign/mixed）
 ├── debug.py                       # ★ 全局调试日志模块
-├── app.py                         #主入口
+│
 ├── main/
 │   └── Json.py                    # secrets.json 读取，导出 API Keys
 │
@@ -49,17 +49,14 @@ AI集群/
 │
 ├── utils/                         # ★ 通用工具库（见下方"通用库说明"）
 │   ├── __init__.py
-│   ├── stream_utils.py            # 流文件操作：路径计算、读写、完成检测
+│   ├── stream_utils.py            # 流文件操作：路径计算、读写、完成检测、取消机制
 │   └── text_utils.py              # 文本处理：filter_json、parse_tasks
-│
-│
-│                      
 │
 ├── projects/                      # 运行时生成：对话持久化 JSON + 流临时文件
 │   ├── 对话名称.json
 │   └── .stream_xxx_yyy.txt        # 临时流文件（完成后删除）
 │
-└── secrets.json                   # 本地密钥文件
+└── secrets.json                   # 本地密钥文件（不提交到 git！）
 ```
 
 ---
@@ -74,7 +71,7 @@ pip install streamlit openai tavily-python
 
 ### 2. 配置密钥
 
-首次运行时程序会提示输入（请在cmd或终端内输入），自动生成 `secrets.json`：
+首次运行时程序会提示输入（请在 cmd 或终端内输入），自动生成 `secrets.json`：
 
 ```json
 {
@@ -91,10 +88,10 @@ pip install streamlit openai tavily-python
 ### 3. 启动
 
 ```bash
-streamlit run "app.py"
+streamlit run app.py
 ```
 
-### 4. 强制更新模型配置（适用于main.py启动）
+### 4. 强制更新模型配置
 
 ```bash
 python config/auto_updater.py --force
@@ -109,7 +106,7 @@ python config/auto_updater.py --force
     │
     ▼
 [app.py - Streamlit 前端]
-    │ call_model_stream_to_file(model, fpath, prompt, role=xxx)
+    │ call_model_stream_to_file(model, fpath, prompt, role=xxx, cancel_event=evt)
     ▼
 [API/router.py - 路由层]
     │ 查 platform_config.get_platform_for_role(role)
@@ -120,7 +117,7 @@ python config/auto_updater.py --force
     │                          │
     └──────────┬───────────────┘
                ▼
-        后台线程写文件
+        后台线程写文件（支持 cancel_event 取消）
         projects/.stream_xxx.txt
                │
                ▼ (每 0.3 秒)
@@ -128,6 +125,7 @@ python config/auto_updater.py --force
                │
                ▼
         实时显示流式内容
+        （完成后用 st.markdown 渲染，支持代码高亮）
 ```
 
 ---
@@ -148,9 +146,9 @@ python config/auto_updater.py --force
 **关键函数：**
 
 ```python
-get_platform_mode()         # 返回 "domestic" | "foreign" | "mixed"
-set_platform_mode("mixed")  # 写入内存 + 持久化到文件
-get_platform_for_role("coder")  # 返回该角色应走的平台
+get_platform_mode()                      # 返回 "domestic" | "foreign" | "mixed"
+set_platform_mode("mixed")               # 写入内存 + 持久化到文件
+get_platform_for_role("coder")           # 返回该角色应走的平台
 get_fallback_model("writer", "foreign")  # 返回兜底模型 ID
 ```
 
@@ -175,10 +173,14 @@ MIXED_ROUTING = {
 
 ```python
 from API.router import call_model, call_model_stream_to_file
+from utils.stream_utils import register_cancel
 
 # role 参数决定走哪个平台（混合模式下）
 result = call_model(model, prompt, role="reasoner")
-call_model_stream_to_file(model, fpath, prompt, role="writer")
+
+# cancel_event 用于停止按钮真正终止后台线程
+evt = register_cancel(fpath)
+call_model_stream_to_file(model, fpath, prompt, role="writer", cancel_event=evt)
 ```
 
 **为什么要有 router 层？**
@@ -225,7 +227,7 @@ call_model_stream_to_file(model, fpath, prompt, role="writer")
 
 ---
 
-### `front end/app.py` — Streamlit 前端
+### `app.py` — Streamlit 前端
 
 **Session State 变量：**
 
@@ -266,7 +268,10 @@ log("ERROR",    "调用失败",  "timeout")
 流文件操作，供 `app.py` 和任何需要检查流状态的模块使用。
 
 ```python
-from utils.stream_utils import stream_file, read_stream, is_done, cleanup, safe_name
+from utils.stream_utils import (
+    stream_file, read_stream, is_done, cleanup, safe_name,
+    register_cancel, cancel_stream, clear_cancel
+)
 
 # 计算流文件路径
 fpath = stream_file("我的项目", "chat")
@@ -278,7 +283,23 @@ content = read_stream(fpath)
 # 检查是否完成（存在 .done 文件）
 if is_done(fpath):
     cleanup(fpath)   # 删除 .txt 和 .done
+
+# ── 取消机制（停止按钮用）──────────────────────────────
+# 1. 启动线程前注册，拿到 Event
+evt = register_cancel(fpath)
+call_model_stream_to_file(model, fpath, prompt, cancel_event=evt)
+
+# 2. 用户点停止时发信号，线程在下一个 chunk 边界退出并自行清理临时文件
+cancel_stream(fpath)
+
+# 3. 线程正常结束后自动调用（无需手动调）
+clear_cancel(fpath)
 ```
+
+**取消机制原理：**
+`register_cancel` 创建一个 `threading.Event` 并以文件路径为 key 存入全局注册表。
+API 层的 chunk 循环里每次先检查这个 Event，收到信号后 `break`，不创建 `.done` 文件，
+并自行删除临时流文件，不留孤儿文件。
 
 **为什么流文件以 `.` 开头？**
 `.stream_xxx.txt` 在 Linux/Mac 上是隐藏文件，`ls` 不会显示，保持 `projects/` 目录整洁。
@@ -340,24 +361,30 @@ Streamlit 的 `st.write_stream` 要求生成器在同一次 rerun 里完成，
 用户发送消息
     │
     ▼
-call_model_stream_to_file(model, fpath, prompt)
+evt = register_cancel(fpath)          ← 注册取消 Event
+call_model_stream_to_file(model, fpath, prompt, cancel_event=evt)
     │  启动后台守护线程，立即返回
     ▼
 proj.chat_stream = {"file": fpath, ...}
-manager._save_project(proj)   ← 状态持久化
+manager._save_project(proj)           ← 状态持久化
 st.rerun()
     │
     ▼ (每次 rerun 检测)
-content = read_stream(fpath)  ← 读取当前已写入的内容
+content = read_stream(fpath)          ← 读取当前已写入的内容
 show_live(label, content, is_done(fpath))
     │
-    ├── 未完成 → time.sleep(0.3); st.rerun()
+    ├── 未完成 → 显示 live-box + 光标动画; time.sleep(0.3); st.rerun()
     │
     └── 完成   → cleanup(fpath)
                  manager.add_message(...)  ← 存入历史
                  proj.chat_stream = None
                  st.rerun()
+                 （历史消息用 st.markdown 渲染，支持代码高亮和表格）
 ```
+
+**停止按钮：**
+点击停止后调用 `cancel_stream(fpath)`，后台线程在下一个 chunk 边界检测到信号后退出，
+自行删除临时流文件，不创建 `.done`。已完成的子任务内容会先存入历史记录再清状态。
 
 **切换对话时发生什么？**
 后台线程继续写文件（线程不受 Streamlit rerun 影响）。
@@ -367,37 +394,48 @@ show_live(label, content, is_done(fpath))
 
 ## Agent 工作流
 
-Agent 模式下 `proj.agent_state` 是一个状态机：
+Agent 模式下 `proj.agent_state` 是一个状态机，**子任务并行执行**：
 
 ```
 phase: "tasks"
     │
-    ├── 找到可执行任务（依赖已满足）
-    │       └── 启动流 → current_stream = {task_id, role, model, file}
-    │               └── 轮询 → done → 存入 results / completed_display
+    ├── 找出所有依赖已满足的任务（可能多个）
+    │       └── 并行启动多个后台线程
+    │               └── active_streams = [{task_id, role, model, file}, ...]
     │
-    ├── 所有任务完成
+    ├── 轮询 active_streams（每 0.3 秒）：
+    │       ├── 收集已完成的 → 存入 results / completed_display
+    │       ├── 完成的从列表移除，未完成的继续追踪
+    │       └── active_streams 清空 → rerun 找下一批可执行任务
+    │
+    ├── 所有任务完成（pending 为空）
     │       └── phase = "summary"
     │
     ▼
 phase: "summary"
-    │   启动总结流
+    │   按原始任务顺序重建结果列表，启动总结流
+    │   current_stream = {task_id: "总结", role: "aggregator", ...}
     └── phase = "summary_streaming"
             │
             └── 轮询 → done → 存入历史 → agent_state = None
 ```
+
+**并行执行说明：**
+没有依赖关系（`depends_on: []`）的任务会在同一批次并发启动，各自独占一个后台线程。
+有依赖的任务会等 `depends_on` 里所有任务都进入 `results` 后，才在下一批次启动。
+这样在保证依赖顺序正确的前提下，最大化并发度。
 
 **`agent_state` 字段说明：**
 
 | 字段 | 说明 |
 |------|------|
 | `tasks` | 完整任务列表（来自 LLM 分解） |
-| `results` | `{task_id: 结果文本}` |
-| `all_output` | 按顺序的结果列表（供总结阶段使用） |
-| `completed_display` | `[{task_id, model_short, content}]` 用于渲染已完成任务 |
-| `current_stream` | 当前正在流的任务信息 |
-| `phase` | 当前阶段 |
-| `user_input` | 用户原始输入（供总结阶段引用） |
+| `results` | `{task_id: 结果文本}`，依赖检查和总结阶段使用 |
+| `completed_display` | `[{task_id, model_short, content}]`，用于渲染已完成任务卡片 |
+| `active_streams` | 当前正在并行运行的流列表 `[{task_id, role, model, file}]` |
+| `current_stream` | 仅 `summary_streaming` 阶段使用，存总结流信息 |
+| `phase` | 当前阶段：`"tasks"` \| `"summary"` \| `"summary_streaming"` |
+| `user_input` | 用户原始输入（总结阶段引用） |
 
 ---
 
@@ -421,7 +459,7 @@ analyze_with_llm()
 validate_and_clean()
     ├── 精确匹配模型 ID
     ├── 失败时模糊匹配
-    └── fallback 时从正确平台取模型（修复了原版混用平台的 bug）
+    └── fallback 时从正确平台取模型
             ↓
         model_config.json（保存）
 ```
@@ -474,4 +512,5 @@ validate_and_clean()
 ```
 
 ---
+
 # 此项目还处于开发阶段，欢迎提交问题。
