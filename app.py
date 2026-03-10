@@ -601,6 +601,8 @@ else:
 
 
         # ─── 普通对话 ───────────────────────────────────────────
+        with st.chat_message("user"):
+            st.markdown(user_input)
         if st.session_state.mode == "chat":
             model   = updater.get_best_model("writer")
             context = manager.get_context()
@@ -632,6 +634,8 @@ else:
 
         # ─── Agent 集群 ─────────────────────────────────────────
         elif st.session_state.mode == "agent":
+            with st.chat_message("user"):
+                st.markdown(user_input)
             # 分解任务
             with st.chat_message("assistant"):
                 st.markdown(
