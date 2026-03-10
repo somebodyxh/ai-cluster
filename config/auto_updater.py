@@ -219,7 +219,8 @@ LMArena 2026年2月榜单
 3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本
 4. 输出 JSON 格式，包含字段：last_update 、models  default_mapping
 5. 优先选择最新版本
-6. 禁止选择以下模型：DeepSeek-R1、deepseek-ai/DeepSeek-R1
+6. 禁止选择以下模型：DeepSeek-R1、deepseek-ai/DeepSeek-R1， Qwen/Qwen3.5-397B-A17B
+
 
 {available_section}
 

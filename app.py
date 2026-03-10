@@ -102,6 +102,21 @@ pre code {
 }
 hr { border-color: #2d2d2d !important; margin: 20px 0 !important; }
 
+[data-testid="stBaseButton-primary"] {
+    background: transparent !important;
+    border: 1px solid #4a9eff !important;
+    color: #4a9eff !important;
+    border-radius: 20px !important;
+}
+[data-testid="stBaseButton-secondary"] {
+    background: transparent !important;
+    border: 1px solid #444 !important;
+    color: #888 !important;
+    border-radius: 20px !important;
+}
+[data-testid="stChatInput"] {
+    position: relative;
+}
 .badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 20px; font-size: 0.78rem;
@@ -471,7 +486,7 @@ elif proj.agent_state:
                     if role == "searcher" and st.session_state.web_search:
                         from tavily import TavilyClient
                         client = TavilyClient(api_key=Tavily_KEY)
-                        results = client.search(prompt, max_results=5)
+                        results = client.search(task["prompt"], max_results=5)
                         search_result = "\n".join(r["content"] for r in results["results"])
                         state["results"][task_id] = search_result
                         state.setdefault("completed_display", []).append({
@@ -583,13 +598,9 @@ if is_streaming_now:
     with col2:
         st.caption("任务进行中，点击停止可终止")
 else:
-    col_search, _ = st.columns([1, 8])
-    with col_search:
-        if st.button(
-            " 联网搜索",
-            type="primary" if st.session_state.web_search else "secondary",
-            use_container_width=True
-        ):
+    col1, col2, _ = st.columns([1, 1, 9])
+    with col1:
+        if st.button(" 联网", type="primary" if st.session_state.web_search else "secondary"):
             st.session_state.web_search = not st.session_state.web_search
             st.rerun()
 
@@ -610,7 +621,7 @@ else:
             if st.session_state.web_search:
                 from tavily import TavilyClient
                 client = TavilyClient(api_key=Tavily_KEY)
-                results = client.search(user_input, max_results=3)
+                results = client.search(task["prompt"], max_results=5)
                 search_context = "\n".join(r["content"] for r in results["results"])
                 prompt = f"以下是联网搜索结果，请基于此回答：\n{search_context}\n\n{context}\n用户: {user_input}\n助手:"
             else:

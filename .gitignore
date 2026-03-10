@@ -53,3 +53,8 @@ config/*.bak
 
 # 如果你有本地测试脚本，可以忽略
 test_*.py
+
+
+
+config/model_config.json
+.gitignore
