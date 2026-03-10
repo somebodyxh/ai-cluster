@@ -21,6 +21,7 @@ def get_config():
         siliconcloud_key =input("请输入硅基流动 API Key").strip()
         tavily_key=input("请输入tavily api key").strip()
         openrouter_key=input("请输入OpenRouter API Key（没有直接回车跳过）").strip()
+        proxy = input("请输入代理地址（如 http://127.0.0.1:7890，不用直接回车跳过）: ").strip()
         
         
         # 3. 构建字典 
@@ -29,7 +30,8 @@ def get_config():
                 "siliconcloud_key": siliconcloud_key,
                 "tavily_key":       tavily_key,
                 "openrouter_key":   openrouter_key,
-            }
+            },
+            "proxy": proxy
         }
 
 
@@ -42,6 +44,7 @@ def get_config():
 
 # 初始化配置
 USER_CONFIG = get_config()
+PROXY = USER_CONFIG.get("proxy", "")
 
 # 读取嵌套中的变量 ---
 #  Api_Key 是父节点，所以必须通过 ["Api_Key"] 进入
@@ -49,3 +52,9 @@ USER_CONFIG = get_config()
 SiliconCloud_KEY = USER_CONFIG["Api_Key"]["siliconcloud_key"]
 Tavily_KEY       = USER_CONFIG["Api_Key"]["tavily_key"]
 OpenRouter_KEY   = USER_CONFIG["Api_Key"].get("openrouter_key", "")  # 没填时为空字符串
+PROXY            = USER_CONFIG.get("proxy", "")
+
+# 读取输入的代理
+if PROXY:
+    os.environ["https_proxy"] = PROXY
+    os.environ["http_proxy"]  = PROXY

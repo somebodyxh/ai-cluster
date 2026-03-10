@@ -27,7 +27,7 @@ def _pick(role: str):
 # ── 对外接口（与原 SiliconCloud_Api.py 完全一致）─────────────────
 
 def call_model(model: str, prompt: str, system_prompt: str = "",
-               temperature: float = 0.7, max_tokens: int = 2000,
+               temperature: float = 0.7, max_tokens: int = 20000,
                role: str = "writer") -> str:
     return _pick(role).call_model(
         model, prompt, system_prompt, temperature, max_tokens
@@ -35,7 +35,7 @@ def call_model(model: str, prompt: str, system_prompt: str = "",
 
 
 def call_model_stream_gen(model, prompt, system_prompt="",
-                          temperature=0.7, max_tokens=2000,
+                          temperature=0.7, max_tokens=20000,
                           role: str = "writer"):
     yield from _pick(role).call_model_stream_gen(
         model, prompt, system_prompt, temperature, max_tokens
@@ -43,7 +43,7 @@ def call_model_stream_gen(model, prompt, system_prompt="",
 
 
 def call_model_stream(model: str, prompt: str, system_prompt: str = "",
-                      temperature: float = 0.7, max_tokens: int = 2000,
+                      temperature: float = 0.7, max_tokens: int = 20000,
                       role: str = "writer") -> str:
     return _pick(role).call_model_stream(
         model, prompt, system_prompt, temperature, max_tokens
@@ -52,7 +52,7 @@ def call_model_stream(model: str, prompt: str, system_prompt: str = "",
 
 def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                                system_prompt: str = "", temperature: float = 0.7,
-                               max_tokens: int = 2000, role: str = "writer",
+                               max_tokens: int = 20000, role: str = "writer",
                                cancel_event=None):
     """
     cancel_event : stream_utils.register_cancel() 返回的 threading.Event，

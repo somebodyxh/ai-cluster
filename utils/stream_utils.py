@@ -26,7 +26,6 @@ import threading
 PROJECTS_DIR = "projects"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 取消注册表
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 用文件路径作 key，存每个流对应的 threading.Event。
 # 启动线程前 register_cancel() 创建 Event，停止时 cancel_stream() set() 它。

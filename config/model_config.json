@@ -1,93 +1,97 @@
 {
-  "last_update": "2026-03-09",
+  "last_update": "2026-03-10",
   "models": [
     {
-      "id": "Pro/moonshotai/Kimi-K2.5",
-      "name": "Kimi K2.5",
+      "id": "Qwen/Qwen3.5-397B-A17B",
+      "name": "Qwen 3.5",
       "capabilities": {
-        "reasoning": 0.8,
-        "coding": 0.6,
+        "reasoning": 0.88,
+        "coding": 0.85,
         "writing": 0.9,
-        "vision": 0.85
+        "chinese": 0.95
       },
       "best_for": [
-        "writing",
-        "vision"
+        "综合办公",
+        "多模态理解",
+        "开源基座"
       ],
-      "source": "xbench 2026-01, LMArena",
-      "ranking": 5
+      "source": "Hugging Face开源榜第一，xbench-ScienceQA榜单前列，原生多模态",
+      "ranking": 1
     },
     {
       "id": "Pro/zai-org/GLM-5",
       "name": "GLM-5",
       "capabilities": {
-        "reasoning": 0.85,
-        "coding": 0.9,
-        "writing": 0.7,
-        "vision": 0.6
+        "reasoning": 0.87,
+        "coding": 0.92,
+        "writing": 0.82,
+        "chinese": 0.93
       },
       "best_for": [
-        "coding",
-        "reasoning"
+        "代码生成",
+        "智能体任务",
+        "系统工程"
       ],
-      "source": "xbench 2026-02, 开源TOP10",
+      "source": "2026开源榜单代码与智能体之王，SWE-bench开源第一",
       "ranking": 2
+    },
+    {
+      "id": "Pro/moonshotai/Kimi-K2.5",
+      "name": "Kimi K2.5",
+      "capabilities": {
+        "reasoning": 0.85,
+        "coding": 0.8,
+        "writing": 0.94,
+        "chinese": 0.96
+      },
+      "best_for": [
+        "长文本处理",
+        "文档摘要",
+        "办公自动化"
+      ],
+      "source": "xbench-DeepSearch国内SOTA，BabyVision国内第一，长文本处理之王",
+      "ranking": 3
+    },
+    {
+      "id": "Pro/deepseek-ai/DeepSeek-V3.2",
+      "name": "DeepSeek-V3.2",
+      "capabilities": {
+        "reasoning": 0.91,
+        "coding": 0.89,
+        "writing": 0.83,
+        "chinese": 0.92
+      },
+      "best_for": [
+        "数学推理",
+        "代码调试",
+        "逻辑分析"
+      ],
+      "source": "LMArena及多评测显示其数学与代码能力突出，国产硬核代表",
+      "ranking": 4
     },
     {
       "id": "Pro/MiniMaxAI/MiniMax-M2.5",
       "name": "MiniMax M2.5",
       "capabilities": {
-        "reasoning": 0.8,
-        "coding": 0.8,
-        "writing": 0.6,
-        "vision": 0.5
+        "reasoning": 0.82,
+        "coding": 0.81,
+        "writing": 0.85,
+        "chinese": 0.94
       },
       "best_for": [
-        "reasoning",
-        "coding"
+        "高性价比API",
+        "实时交互",
+        "快速落地"
       ],
-      "source": "开源TOP10 2026",
-      "ranking": 3
-    },
-    {
-      "id": "Qwen/Qwen3.5-397B-A17B",
-      "name": "Qwen 3.5",
-      "capabilities": {
-        "reasoning": 0.9,
-        "coding": 0.85,
-        "writing": 0.95,
-        "vision": 0.9
-      },
-      "best_for": [
-        "writing",
-        "vision",
-        "reasoning"
-      ],
-      "source": "Hugging Face 2026-02, xbench",
-      "ranking": 1
-    },
-    {
-      "id": "Pro/deepseek-ai/DeepSeek-R1",
-      "name": "DeepSeek-V4 (R1)",
-      "capabilities": {
-        "reasoning": 0.95,
-        "coding": 0.9,
-        "writing": 0.7,
-        "vision": 0.5
-      },
-      "best_for": [
-        "reasoning",
-        "coding"
-      ],
-      "source": "开源TOP10 2026",
-      "ranking": 4
+      "source": "2026开源榜单性价比与速度之王，推理成本低",
+      "ranking": 5
     }
   ],
-  "default_mapping": {
-    "coder": "Pro/zai-org/GLM-5",
-    "reasoner": "Pro/deepseek-ai/DeepSeek-R1",
-    "writer": "Qwen/Qwen3.5-397B-A17B",
-    "vision": "Pro/moonshotai/Kimi-K2.5",
-    "aggregator": "Qwen/Qwen3.5-397B-A17B"
+
+"default_mapping": {
+    "coder":      "Pro/deepseek-ai/DeepSeek-V3.2",
+    "reasoner":   "Pro/deepseek-ai/DeepSeek-V3.2",
+    "writer":     "Pro/deepseek-ai/DeepSeek-V3.2",
+    "aggregator": "Pro/deepseek-ai/DeepSeek-V3.2"
   }
 }

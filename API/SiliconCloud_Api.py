@@ -23,7 +23,7 @@ def get_client():
 
 def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                                system_prompt: str = "", temperature: float = 0.7,
-                               max_tokens: int = 2000,
+                               max_tokens: int = 10000,
                                cancel_event: threading.Event = None):
     """
     后台线程流式调用，将 chunk 实时写入文件。
@@ -101,7 +101,7 @@ def call_model_stream_to_file(model: str, file_path: str, prompt: str,
                      name=f"stream-{model.split('/')[-1][:20]}").start()
 
 
-def call_model_stream_gen(model, prompt, system_prompt="", temperature=0.7, max_tokens=2000):
+def call_model_stream_gen(model, prompt, system_prompt="", temperature=0.7, max_tokens=10000):
     """生成器，供 st.write_stream 使用"""
     log_api_call(model, prompt, stream=True, max_tokens=max_tokens)
     client  = get_client()

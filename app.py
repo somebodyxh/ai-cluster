@@ -1,19 +1,22 @@
+
 import streamlit as st
 import sys, os, json, time
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from multi_agent.project_manager import ProjectManager
 from multi_agent.scheduler import MultiAgentScheduler
 from API.router import call_model, call_model_stream_to_file
 from config.auto_updater import ModelConfigUpdater
 from main.Json import Tavily_KEY
 from platform_config import get_platform_mode, set_platform_mode, MODE_LABELS, MIXED_ROUTING
-# 通用工具库（
 from utils.stream_utils import (safe_name, stream_file, read_stream,
                                 is_done, cleanup,
                                 register_cancel, cancel_stream)   # P1: 取消支持
 from utils.text_utils import filter_json, parse_tasks
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# ================================================================
+# 环境变量
+# ================================================================
 
 os.environ["TAVILY_API_KEY"] = Tavily_KEY
 
@@ -130,7 +133,7 @@ hr { border-color: #2d2d2d !important; margin: 20px 0 !important; }
 # ================================================================
 # 工具函数
 # ================================================================
-ROLE_ICON = {"coder": "💻", "reasoner": "🧠", "writer": "✍️", "aggregator": "🔗"}
+ROLE_ICON = {"coder": "💻", "reasoner": "🧠", "writer": "✍️", "aggregator": "🔗","searcher": "🌐"}
 PROJECTS_DIR = "projects"
 
 
@@ -151,6 +154,8 @@ if "mode"          not in st.session_state:
     st.session_state.mode          = "chat"
 if "show_new_form" not in st.session_state:
     st.session_state.show_new_form = False
+if "web_search" not in st.session_state:
+    st.session_state.web_search = False
 
 manager: ProjectManager     = st.session_state.manager
 updater: ModelConfigUpdater = st.session_state.updater
@@ -200,6 +205,10 @@ with st.sidebar:
     if new_platform != current_platform:
         set_platform_mode(new_platform)
         st.rerun()
+
+    if new_platform in ("foreign", "mixed"):
+        st.warning("⚠️ OpenRouter 需要代理，国内直连可能失败")
+
     if new_platform == "mixed":
         with st.expander("⚙️ 角色路由", expanded=False):
             st.caption("在 platform_config.py 的 MIXED_ROUTING 里修改")
@@ -459,6 +468,18 @@ elif proj.agent_state:
                 for task in executable:
                     task_id = task["task_id"]
                     role    = task["role"]
+                    if role == "searcher" and st.session_state.web_search:
+                        from tavily import TavilyClient
+                        client = TavilyClient(api_key=Tavily_KEY)
+                        results = client.search(prompt, max_results=5)
+                        search_result = "\n".join(r["content"] for r in results["results"])
+                        state["results"][task_id] = search_result
+                        state.setdefault("completed_display", []).append({
+                            "task_id":     task_id,
+                            "model_short": "Tavily",
+                            "content":     search_result
+                        })
+                        continue  # 不启动 LLM 流，直接跳过
                     model   = updater.get_best_model(role)
                     prompt  = task["prompt"]
                     for dep in task.get("depends_on", []):
@@ -562,6 +583,16 @@ if is_streaming_now:
     with col2:
         st.caption("任务进行中，点击停止可终止")
 else:
+    col_search, _ = st.columns([1, 8])
+    with col_search:
+        if st.button(
+            " 联网搜索",
+            type="primary" if st.session_state.web_search else "secondary",
+            use_container_width=True
+        ):
+            st.session_state.web_search = not st.session_state.web_search
+            st.rerun()
+
     placeholder_text = {
         "chat":  "有什么可以帮你…",
         "agent": "描述一个复杂任务，Agent 集群自动拆解执行…",
@@ -573,13 +604,21 @@ else:
         if st.session_state.mode == "chat":
             model   = updater.get_best_model("writer")
             context = manager.get_context()
-            prompt  = f"{context}\n用户: {user_input}\n助手:"
+            context = manager.get_context()
+            if st.session_state.web_search:
+                from tavily import TavilyClient
+                client = TavilyClient(api_key=Tavily_KEY)
+                results = client.search(user_input, max_results=3)
+                search_context = "\n".join(r["content"] for r in results["results"])
+                prompt = f"以下是联网搜索结果，请基于此回答：\n{search_context}\n\n{context}\n用户: {user_input}\n助手:"
+            else:
+                prompt = f"{context}\n用户: {user_input}\n助手:"
             fpath   = stream_file(proj.name, "chat")
 
             cancel_evt = register_cancel(fpath)          # P1: 注册取消事件
             call_model_stream_to_file(
                 model, fpath, prompt,
-                system_prompt="你是一个有帮助的AI助手，请基于对话历史回答用户问题。",
+                system_prompt="你是一个客观公正的AI助手，请基于对话历史回答用户问题。",
                 role="writer",
                 cancel_event=cancel_evt                  # P1: 传入线程
             )
@@ -602,18 +641,26 @@ else:
             decompose_model  = updater.get_best_model("reasoner")
             decompose_prompt = f"""
 请将以下用户任务分解成多个子任务，输出JSON数组。
+- 子任务数量控制在 3~5 个，不要过度拆分
+- 能合并的任务尽量合并，优先并行而不是串行
 每个子任务包含：
 - task_id: 唯一标识（如 task1, task2）
-- role: coder / reasoner / writer / aggregator
+- role: 严格按以下规则选择：
+  * writer：默认选择，适用于写作、总结、分析、搜索、普通问答等大多数任务
+  * coder：仅用于需要写代码的任务
+  * reasoner：仅用于需要复杂数学计算或严密逻辑推理的任务，整个任务 
+  * searcher：仅用于需要联网搜索实时信息的任务，整个任务计划中最多使用1个，且必须是第一个任务计划中最多使用1次
+  * aggregator：仅用于最后一个整合所有结果的任务，整个任务计划中只能有1个
 - prompt: 具体指令，可用 {{{{task_id}}}} 引用前序结果
 - depends_on: 依赖的task_id列表，没有则填 []
+
 
 用户任务：{user_input}
 
 只输出JSON数组，不要其他文字。
 """
             raw   = call_model(decompose_model, decompose_prompt,
-                               temperature=0.2, max_tokens=2500, role="reasoner")
+                               temperature=0.2, max_tokens=3000, role="reasoner")
             tasks = parse_tasks(raw)
 
             if not tasks:

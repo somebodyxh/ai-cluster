@@ -215,11 +215,11 @@ LMArena 2026年2月榜单
 要求：
 1. 提取评测中提到的模型，整理成列表，每个模型包含：
    id、name、capabilities各能力评分0-1、best_for、source、ranking
-2. 为以下任务类型推荐最佳模型：coder、reasoner、writer、vision、aggregator，写入 default_mapping 字段
+2. 为以下任务类型推荐最佳模型：coder、reasoner、writer、aggregator，写入 default_mapping 字段 
 3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本
 4. 输出 JSON 格式，包含字段：last_update 、models  default_mapping
 5. 优先选择最新版本
-6.不要使用deepseekR1和deepseeekv3
+6. 禁止选择以下模型：DeepSeek-R1、deepseek-ai/DeepSeek-R1
 
 {available_section}
 
@@ -240,17 +240,17 @@ LMArena 2026年2月榜单
     "coder":      "对应平台模型ID",
     "reasoner":   "对应平台模型ID",
     "writer":     "对应平台模型ID",
-    "vision":     "对应平台模型ID",
     "aggregator": "对应平台模型ID"
   }}
 }}
 """
+# "vision":     "对应平台模型ID", v2.0再加入哈 多模态识别用的
         response = call_model(
             model=MAIN_MODEL,
             prompt=user_prompt,
             system_prompt=system_prompt,
             temperature=0.1,
-            max_tokens=3000,
+            max_tokens=6000,
             role="reasoner"  
         )
 
