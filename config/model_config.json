@@ -1,106 +1,156 @@
 {
-  "last_update": "2026-03-10",
+  "last_update": "2026-03-12",
   "models": [
     {
-      "id": "Pro/deepseek-ai/DeepSeek-V3.2",
-      "name": "DeepSeek-V3.2",
+      "id": "anthropic/claude-opus-4.6",
+      "name": "Claude Opus 4.6",
       "capabilities": {
-        "reasoning": 0.92,
-        "coding": 0.95,
-        "writing": 0.75,
-        "aggregation": 0.85
-      },
-      "best_for": [
-        "coding",
-        "reasoning"
-      ],
-      "source": "开源大模型榜单 2026-02",
-      "ranking": 4
-    },
-    {
-      "id": "Pro/moonshotai/Kimi-K2.5",
-      "name": "Kimi-K2.5",
-      "capabilities": {
-        "reasoning": 0.8,
-        "coding": 0.7,
-        "writing": 0.9,
-        "aggregation": 0.9
-      },
-      "best_for": [
-        "writing",
-        "aggregation"
-      ],
-      "source": "xbench月报 2026-02",
-      "ranking": 1
-    },
-    {
-      "id": "Qwen/Qwen3.5-397B-A17B",
-      "name": "Qwen3.5",
-      "capabilities": {
-        "reasoning": 0.85,
+        "reasoning": 0.95,
         "coding": 0.85,
-        "writing": 0.85,
-        "aggregation": 0.9
+        "writing": 0.92,
+        "chinese": 0.88
       },
       "best_for": [
-        "aggregation",
-        "reasoning"
+        "reasoning",
+        "writing"
       ],
-      "source": "Hugging Face排行榜 2026-02",
+      "source": "LMArena 2026-02",
       "ranking": 1
+    },
+    {
+      "id": "google/gemini-3.1-pro-preview",
+      "name": "Gemini 3.1 Pro",
+      "capabilities": {
+        "reasoning": 0.93,
+        "coding": 0.87,
+        "writing": 0.91,
+        "chinese": 0.85
+      },
+      "best_for": [
+        "reasoning",
+        "coding"
+      ],
+      "source": "LMArena 2026-02",
+      "ranking": 2
+    },
+    {
+      "id": "openai/gpt-5.4-pro",
+      "name": "GPT-5.4 Pro",
+      "capabilities": {
+        "reasoning": 0.94,
+        "coding": 0.89,
+        "writing": 0.93,
+        "chinese": 0.87
+      },
+      "best_for": [
+        "reasoning",
+        "coding",
+        "writing"
+      ],
+      "source": "LMArena 2026-02",
+      "ranking": 3
+    },
+    {
+      "id": "Pro/deepseek-ai/DeepSeek-V3.2",
+      "name": "DeepSeek-V3.2 Speciale",
+      "capabilities": {
+        "reasoning": 0.94,
+        "coding": 0.88,
+        "writing": 0.9,
+        "chinese": 0.92
+      },
+      "best_for": [
+        "reasoning",
+        "task_decomposition",
+        "information_extraction"
+      ],
+      "source": "LMArena 2026-02, 天罡评测 2026-01",
+      "ranking": 5
+    },
+    {
+      "id": "Qwen/Qwen3.5-122B-A10B",
+      "name": "Qwen2.5-72B",
+      "capabilities": {
+        "reasoning": 0.89,
+        "coding": 0.86,
+        "writing": 0.91,
+        "chinese": 0.94
+      },
+      "best_for": [
+        "chinese",
+        "writing"
+      ],
+      "source": "LMArena 2026-02, 天罡评测 2026-01",
+      "ranking": 6
+    },
+    {
+      "id": "Pro/MiniMaxAI/MiniMax-M2.1",
+      "name": "MiniMax-M2.1",
+      "capabilities": {
+        "reasoning": 0.88,
+        "coding": 0.9,
+        "writing": 0.89,
+        "chinese": 0.91
+      },
+      "best_for": [
+        "coding"
+      ],
+      "source": "LMArena 2026-02",
+      "ranking": 7
     },
     {
       "id": "Pro/zai-org/GLM-5",
       "name": "GLM-5",
       "capabilities": {
-        "reasoning": 0.85,
-        "coding": 0.9,
-        "writing": 0.8,
-        "aggregation": 0.85
+        "reasoning": 0.87,
+        "coding": 0.92,
+        "writing": 0.88,
+        "chinese": 0.93
       },
       "best_for": [
-        "coding",
-        "reasoning"
+        "coding"
       ],
-      "source": "开源大模型榜单 2026-02",
-      "ranking": 2
+      "source": "LMArena 2026-02",
+      "ranking": 8
     },
     {
-      "id": "Pro/MiniMaxAI/MiniMax-M2.5",
-      "name": "MiniMax-M2.5",
+      "id": "Pro/moonshotai/Kimi-K2.5",
+      "name": "Kimi K2.5",
       "capabilities": {
-        "reasoning": 0.8,
-        "coding": 0.8,
-        "writing": 0.8,
-        "aggregation": 0.8
+        "reasoning": 0.91,
+        "coding": 0.84,
+        "writing": 0.87,
+        "chinese": 0.92
       },
       "best_for": [
-        "aggregation"
+        "reasoning",
+        "math"
       ],
-      "source": "开源大模型榜单 2026-02",
-      "ranking": 3
+      "source": "LMArena 2026-02",
+      "ranking": 9
     },
     {
-      "id": "ByteDance-Seed/Seed-OSS-36B-Instruct",
-      "name": "Seed-OSS-36B-Instruct",
+      "id": "bytedance-seed/seed-2.0-lite",
+      "name": "Seed 2.0",
       "capabilities": {
-        "reasoning": 0.75,
-        "coding": 0.7,
+        "reasoning": 0.86,
+        "coding": 0.82,
         "writing": 0.85,
-        "aggregation": 0.8
+        "chinese": 0.88,
+        "vision": 0.93
       },
       "best_for": [
-        "writing",
-        "aggregation"
+        "vision",
+        "multimodal"
       ],
-      "source": "天罡评测 2024-08",
-      "ranking": 1
+      "source": "LMArena 2026-02",
+      "ranking": 4
     }
   ],
   "default_mapping": {
     "coder": "Pro/zai-org/GLM-5",
-    "reasoner": "Pro/deepseek-ai/DeepSeek-V3.2",
-    "writer": "Pro/deepseek-ai/DeepSeek-V3.2",
-    "aggregator": "Pro/deepseek-ai/DeepSeek-V3.2"
+    "reasoner": "Pro/deepseek-ai/deepseek-V3.2",
+    "writer": "Pro/deepseek-ai/deepseek-V3.2",
+    "aggregator": "Pro/deepseek-ai/deepseek-V3.2"
   }
 }

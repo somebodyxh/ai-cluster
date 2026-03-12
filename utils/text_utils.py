@@ -69,6 +69,7 @@ def parse_tasks(raw: str):
         - task_id 和 depends_on 里的字符串自动去首尾空格，防止后续依赖匹配失败
         - depends_on 如果模型输出了字符串而非列表（偶发），自动转为列表
         - 解析失败一律返回 None，由调用方决定降级策略
+        - 处理编码问题：移除 BOM 标记，修复常见编码问题
 
     参数：
         raw : 模型的原始输出文本
@@ -82,13 +83,42 @@ def parse_tasks(raw: str):
         模型输出 "depends_on": " task1 " →  转为 ["task1"]
     """
     try:
+        # 预处理：修复常见编码问题
+        cleaned_raw = raw
+        
+        # 1. 移除 BOM 标记
+        if cleaned_raw.startswith('\ufeff'):
+            cleaned_raw = cleaned_raw[1:]
+        
+        # 2. 尝试修复编码问题，移除非打印字符
+        import re
+        # 移除控制字符（除了换行和制表符）
+        cleaned_raw = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', cleaned_raw)
+        
+        # 3. 处理乱码字符，尝试用不同编码解码
+        try:
+            # 尝试 UTF-8 解码
+            cleaned_raw = cleaned_raw.encode('utf-8', 'ignore').decode('utf-8')
+        except:
+            pass
+        
         # 找到第一个 [ 和最后一个 ]，提取中间内容
-        s = raw.find('[')
-        e = raw.rfind(']') + 1
+        s = cleaned_raw.find('[')
+        e = cleaned_raw.rfind(']') + 1
         if s == -1 or e <= s:
-            return None
-
-        tasks = json.loads(raw[s:e])
+            # 尝试在原始数据中查找
+            s = raw.find('[')
+            e = raw.rfind(']') + 1
+            if s == -1 or e <= s:
+                return None
+            cleaned_raw = raw  # 回退到原始数据
+        
+        json_str = cleaned_raw[s:e]
+        
+        # 记录用于调试（生产环境可以移除）
+        # print(f"解析 JSON: {json_str[:200]}..." if len(json_str) > 200 else f"解析 JSON: {json_str}")
+        
+        tasks = json.loads(json_str)
 
         for t in tasks:
             # task_id 去空格，防止占位符替换时匹配失败（如 "{{ task1 }}"）
@@ -106,6 +136,8 @@ def parse_tasks(raw: str):
 
         return tasks
 
-    except Exception:
+    except Exception as e:
         # JSON 解析失败：模型没有按格式输出
+        # 记录错误用于调试
+        # print(f"JSON 解析失败: {e}\n原始内容: {raw[:200]}..." if len(raw) > 200 else f"JSON 解析失败: {e}\n原始内容: {raw}")
         return None

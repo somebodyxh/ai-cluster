@@ -58,3 +58,8 @@ test_*.py
 
 config/model_config.json
 .gitignore
+.continuenode_modules/
+package-lock.json
+__pycache__/
+*.pyc
+frontend/node_modules/
