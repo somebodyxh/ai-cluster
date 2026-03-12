@@ -117,9 +117,12 @@ class ProjectManager:
         self._save_project(self.current_project)
         log_project(f"add_message role={role}",
                     f"内容前50字: {repr(content[:50])}")
-        if self.current_project.message_count % 6 == 0:
+        compressed = False
+        if self.current_project.message_count % 20 == 0:
             log_project("触发记忆压缩", f"message_count={self.current_project.message_count}")
             self.compress_memory()
+            compressed = True
+        return compressed
 
     def get_context(self, max_history: int = 10) -> str:
         if not self.current_project:

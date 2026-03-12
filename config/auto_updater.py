@@ -15,7 +15,7 @@
     5. _save_config()            → 写入 config/model_config.json
 
 注意：
-    MAIN_MODEL 是分析评测数据用的模型，role="reasoner"，
+    _get_main_model是分析评测数据用的模型，role="reasoner"，
     在混合模式下会路由到硅基流动（DeepSeek），节省 OpenRouter 费用。
 """
 
@@ -24,11 +24,20 @@ import os
 import shutil
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
+from platform_config import get_platform_for_role
+
 
 # router 统一路由层，不直接调硅基或 OpenRouter
 from API.router import call_model, list_models
 # 读取当前平台模式和混合路由配置
 from platform_config import get_platform_mode, MIXED_ROUTING
+
+#根据平台自动切换主分析llm
+def _get_main_model():
+    platform = get_platform_for_role("reasoner")
+    if platform == "foreign":
+        return "deepseek/deepseek-v3.2"   # OpenRouter 格式
+    return "Pro/deepseek-ai/DeepSeek-V3.2"  # 硅基流动格式
 
 try:
     from tavily import TavilyClient
@@ -38,6 +47,8 @@ except ImportError:
     print("警告: tavily-python 未安装，搜索功能将使用模拟模式。")
 
 
+
+
 # ── 配置文件路径 ──────────────────────────────────────────────────
 CONFIG_DIR  = "config"
 CONFIG_FILE = os.path.join(CONFIG_DIR, "model_config.json")
@@ -45,7 +56,7 @@ BACKUP_FILE = os.path.join(CONFIG_DIR, "model_config.json.bak")
 
 # ── 分析评测数据用的主模型 ─────────────────────────────────────────
 # role="reasoner" → 混合模式下走硅基流动（DeepSeek 分析能力强且便宜）
-MAIN_MODEL = "Pro/deepseek-ai/DeepSeek-V3.2"
+
 
 os.makedirs(CONFIG_DIR, exist_ok=True)
 
@@ -219,7 +230,7 @@ LMArena 2026年2月榜单
 3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本
 4. 输出 JSON 格式，包含字段：last_update 、models  default_mapping
 5. 优先选择最新版本
-6. 禁止选择以下模型：DeepSeek-R1、deepseek-ai/DeepSeek-R1， Qwen/Qwen3.5-397B-A17B
+6. 禁止选择以下模型：任何 Kimi / moonshot 系列 任何 Qwen / qwen 系列
 
 
 {available_section}
@@ -247,10 +258,10 @@ LMArena 2026年2月榜单
 """
 # "vision":     "对应平台模型ID", v2.0再加入哈 多模态识别用的
         response = call_model(
-            model=MAIN_MODEL,
+            model= _get_main_model(),
             prompt=user_prompt,
             system_prompt=system_prompt,
-            temperature=0.1,
+            temperature=0,
             max_tokens=6000,
             role="reasoner"  
         )

@@ -721,6 +721,232 @@ task3（aggregator, depends_on=["task1","task2"]）← 等 task1+task2 完成后
 
 ---
 
+## 自定义指南
+
+这一节列出项目里所有你可能想改的变量，以及怎么改、改了会影响什么。
+
+---
+
+### 想换模型
+
+**方法一：让系统自动选（推荐）**
+
+点设置面板里的「自动更新模型配置」，系统会搜索最新榜单后自动填写。
+
+**方法二：手动指定某个角色用什么模型**
+
+直接编辑 `config/model_config.json` 的 `default_mapping`：
+
+```json
+"default_mapping": {
+    "coder":      "openai/gpt-4o",
+    "reasoner":   "Pro/deepseek-ai/DeepSeek-R1",
+    "writer":     "Pro/deepseek-ai/DeepSeek-V3",
+    "aggregator": "openai/gpt-4o-mini",
+    "searcher":   "Pro/deepseek-ai/DeepSeek-V3"
+}
+```
+
+注意模型 ID 格式：硅基流动用 `Vendor/ModelName`（如 `Qwen/Qwen2.5-72B-Instruct`），OpenRouter 用 `vendor/model`（如 `openai/gpt-4o`）。
+
+**方法三：改兜底模型（model_config.json 坏了也不崩溃）**
+
+编辑 `platform_config.py` 里的 `DOMESTIC_FALLBACKS` 和 `FOREIGN_FALLBACKS`：
+
+```python
+DOMESTIC_FALLBACKS = {
+    "writer": "Qwen/Qwen2.5-72B-Instruct",   ← 改这里
+    ...
+}
+```
+
+---
+
+### 想换哪个角色走哪个平台（混合模式）
+
+编辑 `platform_config.py` 的 `MIXED_ROUTING`：
+
+```python
+MIXED_ROUTING = {
+    "coder":      "foreign",    # 改成 "domestic" 则用硅基的 Qwen-Coder
+    "reasoner":   "domestic",   # 改成 "foreign" 则用 Claude/GPT 推理
+    "writer":     "domestic",   # 改成 "foreign" 则用 GPT-4o 写作
+    "aggregator": "foreign",    # 改成 "domestic" 则省钱
+}
+```
+
+改完之后不需要重启，下一次 API 调用就生效。
+
+---
+
+### 想禁止自动更新时选某些模型
+
+在 `config/auto_updater.py` 里找到 `BLACKLIST`，加入不想要的关键词：
+
+```python
+BLACKLIST = ["kimi", "moonshot", "qwen"]   ← 加在这里
+```
+
+匹配规则是模型 ID 里包含这个字符串就跳过，大小写不敏感。
+
+---
+
+### 想改记忆压缩的触发频率
+
+编辑 `multi_agent/project_manager.py`：
+
+```python
+if self.current_project.message_count % 20 == 0:   ← 改这个数字
+```
+
+数字越大压缩越少，上下文会更完整但 token 消耗也更多。建议范围 10～50。
+
+---
+
+### 想改模型温度
+
+在各路由文件调用 `call_model` / `call_model_stream_gen` 的地方改 `temperature` 参数：
+
+| 值 | 效果 | 适合场景 |
+|----|------|----------|
+| `0` | 每次输出完全一样，最稳定 | JSON 格式输出、任务分解 |
+| `0.3` | 基本稳定，轻微变化 | 总结、整合 |
+| `0.7` | 默认值，均衡 | 普通对话 |
+| `1.0+` | 输出更有创意但容易跑偏 | 头脑风暴类任务 |
+
+任务分解在 `backend/routes/agent.py` 的 `decompose_tasks()` 里，默认 `temperature=0.2`。
+普通对话在 `backend/routes/chat.py` 的 `send_chat()` 里，默认 `temperature=0.7`。
+
+---
+
+### 想改自动更新的检查周期
+
+编辑 `config/auto_updater.py`：
+
+```python
+UPDATE_INTERVAL_DAYS = 7   ← 改成你想要的天数
+```
+
+改成 `1` 则每天检查一次，改成 `0` 则每次启动都强制更新。
+
+---
+
+### 想加新的 Agent 角色
+
+需要改三个地方：
+
+**1. `platform_config.py` 加入路由和兜底模型：**
+
+```python
+MIXED_ROUTING = {
+    ...
+    "translator": "domestic",   ← 新角色
+}
+
+DOMESTIC_FALLBACKS = {
+    ...
+    "translator": "Qwen/Qwen2.5-72B-Instruct",
+}
+```
+
+**2. `backend/routes/agent.py` 的 `get_decompose_prompt()` 里加角色说明：**
+
+```python
+# 在 role 说明里加一行
+# * translator：用于翻译任务
+```
+
+这样 LLM 在分解任务时才知道有这个角色可以选。
+
+**3. `backend/routes/agent.py` 的 `ROLE_ICON` 里加图标（可选）：**
+
+```python
+ROLE_ICON = {
+    ...
+    "translator": "🌍",
+}
+```
+
+---
+
+### 想改 SSE 的特殊信号
+
+目前系统里有两个特殊信号，前端会拦截它们而不是显示在消息气泡里：
+
+| 信号 | 含义 | 前端处理 |
+|------|------|----------|
+| `[DONE]` | 本次回答结束 | 关闭流，解除输入框禁用 |
+| `[COMPRESSING]` | 触发了记忆压缩 | 显示「🧠 记忆已压缩」提示3秒 |
+
+如果要加新的信号，在 `backend/routes/chat.py` 里 yield，在 `frontend/src/components/ChatPanel.jsx` 的 `onChunk` 回调里拦截处理。
+
+---
+
+### 各 JSON 文件字段说明
+
+#### `projects/对话名.json` — 对话存档
+
+```json
+{
+    "name": "对话名称",
+    "created_at": "2026-03-12T20:00:00",
+    "history": [
+        {"role": "user",      "content": "用户说的话"},
+        {"role": "assistant", "content": "AI 回复的话"}
+    ],
+    "summary":       "记忆压缩后的摘要，null 表示还没压缩过",
+    "message_count": 12,
+    "agent_state":   null,
+    "chat_stream":   null
+}
+```
+
+- `history` 完整对话历史，直接发给 LLM 作为上下文
+- `summary` 触发压缩后生成，之后 `get_context()` 会把它拼在历史前面
+- `agent_state` 只有 Agent 任务进行中时不为 null，用于页面刷新后恢复任务
+- `chat_stream` 普通对话流进行中时记录流文件路径，目前基本不用了
+
+#### `config/model_config.json` — 模型配置
+
+```json
+{
+    "last_update": "2026-03-12",
+    "models": [
+        {
+            "id":           "Pro/deepseek-ai/DeepSeek-V3",   ← 平台实际 ID，必须完全一致
+            "name":         "DeepSeek-V3",                   ← 显示名，随便写
+            "capabilities": {
+                "reasoning": 0.92,   ← 0~1，越高越强
+                "coding":    0.85,
+                "writing":   0.94
+            },
+            "best_for": ["writer", "reasoning"],   ← 这个模型适合哪些角色
+            "source":   "LMArena 2026-03",         ← 数据来源，仅记录用
+            "ranking":  3                          ← 排名，数字越小越好
+        }
+    ],
+    "default_mapping": {
+        "coder":      "openai/gpt-4o",
+        "reasoner":   "Pro/deepseek-ai/DeepSeek-R1",
+        "writer":     "Pro/deepseek-ai/DeepSeek-V3",
+        "aggregator": "openai/gpt-4o-mini",
+        "searcher":   "Pro/deepseek-ai/DeepSeek-V3"
+    }
+}
+```
+
+`default_mapping` 优先级最高，系统先查这里。`models[]` 是备选库，`default_mapping` 里没有某个角色时才去 `models[]` 里按 `best_for` 和 `ranking` 找。
+
+#### `config/platform_mode.json` — 当前平台模式
+
+```json
+{"mode": "mixed"}
+```
+
+只有一个字段，可选值 `domestic` / `foreign` / `mixed`。直接改文件或者在设置面板切换都行，不需要重启。
+
+---
+
 ## API 接口速查
 
 ```
@@ -754,6 +980,13 @@ Agent 模式
 
 ## 更新日志
 
+### v2.1 (2026-03-12)
+- 记忆压缩触发条件改为20条消息
+- 前端新增记忆压缩提示（🧠 记忆已压缩，显示3秒）
+- auto_updater 删除硬编码 MAIN_MODEL，改为动态按平台选择，修复国外模式更新配置400报错
+- auto_updater 新增模型黑名单（Kimi / Qwen），提示词和 validate 双重过滤
+- README 新增自定义指南章节
+
 ### v2.0 (2026-03-12)
 - **架构重构**：舍弃 Streamlit，改为 FastAPI + React（Vite）前后端分离
 - 新增 `backend/` 目录，`dependencies.py` 统一单例，修复三路由各自 `new manager` 导致状态不共享的 bug
@@ -785,6 +1018,7 @@ Agent 模式
 - 修复侧边栏文件句柄泄漏
 
 ---
-
+# 碎碎念
 *此项目还处于开发阶段，欢迎提交 issue。*
 *项目有些虽然是 AI 写的，但我会一句一句地看。因为作者快中考了，所以肯定会有疏漏，请大家轻喷。*
+目前backend和frontend还没有审核 太累了 等我中考完我看看

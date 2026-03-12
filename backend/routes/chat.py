@@ -62,6 +62,12 @@ def send_chat(req: ChatRequest):
         if full_response:
             manager.add_message("user", req.message)
             manager.add_message("assistant", full_response)
+            compressed = manager.add_message("assistant", full_response)
+
+            if compressed:
+                yield f"data: {json.dumps('[COMPRESSING]', ensure_ascii=False)}\n\n"
+            
+
 
         yield f"data: {json.dumps('[DONE]')}\n\n"
 

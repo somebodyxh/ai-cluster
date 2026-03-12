@@ -12,10 +12,11 @@ export default function ChatPanel() {
     isStreaming, setIsStreaming, webSearch, toggleWebSearch,
   } = useStore()
 
-  const [input,  setInput]  = useState('')
-  const [error,  setError]  = useState(null)
-  const bottomRef           = useRef(null)
-  const textareaRef         = useRef(null)
+  const [input,          setInput]          = useState('')
+  const [error,          setError]          = useState(null)
+  const [compressNotice, setCompressNotice] = useState(false)
+  const bottomRef   = useRef(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -34,7 +35,6 @@ export default function ChatPanel() {
     const userMsg = input.trim()
     setInput('')
     setError(null)
-
     addMessage({ role: 'user',      content: userMsg })
     addMessage({ role: 'assistant', content: '' })
     setIsStreaming(true)
@@ -43,20 +43,32 @@ export default function ChatPanel() {
       currentProject,
       userMsg,
       webSearch,
-      (chunk) => updateLastMessage(chunk),
-      ()      => setIsStreaming(false),
-      ()      => { setIsStreaming(false); setError('网络错误，请重试') },
+      (chunk) => {
+        // 拦截特殊信号，不追加到消息气泡
+        if (chunk === '[COMPRESSING]') {
+          setCompressNotice(true)
+          setTimeout(() => setCompressNotice(false), 3000)
+          return
+        }
+        updateLastMessage(chunk)
+      },
+      () => setIsStreaming(false),
+      () => { setIsStreaming(false); setError('网络错误，请重试') },
     )
   }
 
   return (
     <div className="chat-panel">
+      {/* 记忆压缩提示 */}
+      {compressNotice && (
+        <div className="compress-notice">🧠 记忆已压缩</div>
+      )}
+
       {/* 消息列表 */}
       <div className="messages">
         {messages.length === 0 && (
           <div className="empty-hint">开始对话吧</div>
         )}
-
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -73,7 +85,6 @@ export default function ChatPanel() {
             </div>
           </div>
         ))}
-
         {error && <div className="error-hint">{error}</div>}
         <div ref={bottomRef} />
       </div>
@@ -87,7 +98,6 @@ export default function ChatPanel() {
         >
           🌐
         </button>
-
         <textarea
           ref={textareaRef}
           className="chat-input"
@@ -103,7 +113,6 @@ export default function ChatPanel() {
           }}
           rows={1}
         />
-
         <button
           className={`send-btn ${isStreaming ? 'disabled' : ''}`}
           onClick={handleSend}
