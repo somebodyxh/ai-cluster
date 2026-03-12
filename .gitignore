@@ -63,3 +63,4 @@ package-lock.json
 __pycache__/
 *.pyc
 frontend/node_modules/
+node_modules/
