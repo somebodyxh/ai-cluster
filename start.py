@@ -147,7 +147,7 @@ def start_production(port, no_browser):
     """生产模式：uvicorn 托管前端静态文件。"""
     url = f"http://localhost:{port}"
     print(f"\n{BOLD}{GREEN}{'─'*50}{RESET}")
-    print(f"{BOLD}  🚀  AI Cluster 启动中{RESET}")
+    print(f"{BOLD}  AI Cluster 启动中{RESET}")
     print(f"  地址：{BOLD}{url}{RESET}")
     print(f"  停止：Ctrl + C")
     print(f"{BOLD}{GREEN}{'─'*50}{RESET}\n")
