@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI Cluster 启动脚本 
+AI Cluster 启动脚本 — 全平台通用
 用法：python start.py [--dev] [--port 8000] [--skip-build] [--help]
 """
 
@@ -46,11 +46,19 @@ def parse_args():
 
 # ── 工具函数 ──────────────────────────────────────────────────────────────────
 def run(cmd, cwd=None, env=None):
-    """执行命令，实时输出，失败时退出。"""
-    proc = subprocess.run(
-        cmd, shell=True, cwd=cwd or ROOT,
-        env={**os.environ, **(env or {})}
-    )
+    """执行命令，支持字符串或列表，实时输出，失败时退出。"""
+    if isinstance(cmd, str):
+        # 对于字符串，使用 shell=True（但注意路径中的特殊字符需要转义）
+        proc = subprocess.run(
+            cmd, shell=True, cwd=cwd or ROOT,
+            env={**os.environ, **(env or {})}
+        )
+    else:
+        # 对于列表，使用 shell=False，安全处理特殊字符
+        proc = subprocess.run(
+            cmd, shell=False, cwd=cwd or ROOT,
+            env={**os.environ, **(env or {})}
+        )
     if proc.returncode != 0:
         error(f"命令失败（exit {proc.returncode}）：{cmd}")
         sys.exit(1)
@@ -94,7 +102,11 @@ def check_python_deps():
 
     if missing:
         info(f"正在安装缺失依赖：{' '.join(missing)}")
-        run(f"{sys.executable} -m pip install {' '.join(missing)}")
+        # 用列表传参，不走 shell，路径里有括号/空格也不会出错
+        result = subprocess.run([sys.executable, "-m", "pip", "install"] + missing)
+        if result.returncode != 0:
+            error("依赖安装失败，请手动运行：pip install " + " ".join(missing))
+            sys.exit(1)
         ok("依赖安装完成")
 
 def check_secrets():
@@ -147,7 +159,7 @@ def start_production(port, no_browser):
     """生产模式：uvicorn 托管前端静态文件。"""
     url = f"http://localhost:{port}"
     print(f"\n{BOLD}{GREEN}{'─'*50}{RESET}")
-    print(f"{BOLD}  AI Cluster 启动中{RESET}")
+    print(f"{BOLD}  🚀  AI Cluster 启动中{RESET}")
     print(f"  地址：{BOLD}{url}{RESET}")
     print(f"  停止：Ctrl + C")
     print(f"{BOLD}{GREEN}{'─'*50}{RESET}\n")
@@ -156,8 +168,8 @@ def start_production(port, no_browser):
         open_browser(url, delay=2.0)
 
     run(
-        f"{sys.executable} -m uvicorn backend.app:app "
-        f"--host 0.0.0.0 --port {port}",
+        [sys.executable, "-m", "uvicorn", "backend.app:app",
+         "--host", "0.0.0.0", "--port", str(port)],
         cwd=ROOT
     )
 
