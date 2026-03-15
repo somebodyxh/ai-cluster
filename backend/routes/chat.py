@@ -61,7 +61,6 @@ def send_chat(req: ChatRequest):
         # 放在 finally 外层保证一定执行
         if full_response:
             manager.add_message("user", req.message)
-            manager.add_message("assistant", full_response)
             compressed = manager.add_message("assistant", full_response)
 
             if compressed:

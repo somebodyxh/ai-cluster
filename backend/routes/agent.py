@@ -325,28 +325,3 @@ def cancel(project_name: str):
 
     return {"ok": True}
 
-@router.get("/agent/stream/{name}")
-async def agent_stream(name: str):
-    async def event_generator():
-        event = threading.Event()
-        
-        def on_update(msg):
-            event.set()
-        
-        # 订阅这个项目的所有状态变化
-        bus.subscribe(f"agent.update.{name}", on_update, "sse")
-        
-        try:
-            while True:
-                event.wait(timeout=30)  # 最多30秒没消息就发心跳
-                event.clear()
-                
-                state = agent_manager.get_state(name)
-                yield f"data: {json.dumps(state)}\n\n"
-                
-                if state.get("done") or state.get("error"):
-                    break
-        finally:
-            bus.unsubscribe(f"agent.update.{name}", "sse")
-    
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
