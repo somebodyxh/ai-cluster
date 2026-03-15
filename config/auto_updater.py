@@ -121,7 +121,7 @@ class ModelConfigUpdater:
                 "最新大模型评测 LMArena 2026",
                 "xbench 模型榜单 2026",
                 "天罡评测 大模型 2026",
-                "Hugging Face 开源模型排行榜 2026",
+                "Hugging Face 模型排行榜 2026",
             ]
             all_results = []
             for q in queries:
@@ -215,7 +215,7 @@ LMArena 2026年2月榜单
 
         system_prompt = (
             "你是一个专业的AI分析师。"
-            "请根据提供的搜索数据，生成模型配置JSON。只输出JSON，不要其他文字。"
+            "请根据提供的搜索数据，生成模型配置JSON。只输出JSON，不能输出其他文字。"
         )
         user_prompt = f"""
 请根据以下搜索到的模型评测信息，生成一个模型配置文件。
@@ -227,7 +227,7 @@ LMArena 2026年2月榜单
 1. 提取评测中提到的模型，整理成列表，每个模型包含：
    id、name、capabilities各能力评分0-1、best_for、source、ranking
 2. 为以下任务类型推荐最佳模型：coder、reasoner、writer、aggregator，写入 default_mapping 字段 
-3. **非常重要**：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本
+3. 非常重要：所有模型 ID 必须严格匹配下方对应平台的可用列表（区分大小写），优先 Pro 版本
 4. 输出 JSON 格式，包含字段：last_update 、models  default_mapping
 5. 优先选择最新版本
 6. 禁止选择以下模型：任何 Kimi / moonshot 系列 任何 Qwen / qwen 系列

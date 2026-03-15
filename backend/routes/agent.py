@@ -82,7 +82,7 @@ def _tick(project_name: str, state: Dict) -> Dict:
                     "model_short": cs["model"].split("/")[-1],
                     "content":     content,
                 })
-                bus.publish(f"agent.update.{project_name}", content=state, sender="worker")
+
             else:
                 still_running.append(cs)
 
@@ -97,7 +97,7 @@ def _tick(project_name: str, state: Dict) -> Dict:
             if not pending:
                 # 所有子任务完成，进入汇总
                 state["phase"] = "summary"
-                bus.publish(f"agent.update.{project_name}", content=state, sender="worker")
+                
             else:
                 # 找可执行任务并启动
                 executable = [

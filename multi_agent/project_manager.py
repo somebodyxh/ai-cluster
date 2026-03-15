@@ -116,7 +116,7 @@ class ProjectManager:
         self.current_project.message_count += 1
         self._save_project(self.current_project)
         log_project(f"add_message role={role}",
-                    f"内容前50字: {repr(content[:50])}")
+                    f"内容前200字: {repr(content[:200])}")
         compressed = False
         if self.current_project.message_count % 20 == 0:
             log_project("触发记忆压缩", f"message_count={self.current_project.message_count}")
